@@ -10,7 +10,7 @@ on:
 
 jobs:
   lint:
-    runs-on: DESKTOP-NRBNRN5
+    runs-on: [self-hosted, windows]
     steps:
       - uses: actions/checkout@v3
 
