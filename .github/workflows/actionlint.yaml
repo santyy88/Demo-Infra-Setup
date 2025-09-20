@@ -1,0 +1,24 @@
+name: ActionLint
+
+on:
+    push:
+          paths:
+                  - '.github/workflows/**'
+                    pull_request:
+                          paths:
+                                  - '.github/workflows/**'
+
+                          jobs:
+                              lint:
+                                    runs-on: ubuntu-latest
+                                        steps:
+                                                - uses: actions/checkout@v3
+                                                      - name: Install ActionLint
+                                                              run: |
+                                                                          curl -sSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.6.26/actionlint_1.6.26_linux_amd64.tar.gz
+                                                                                    tar -xzf actionlint.tar.gz
+                                                                                              chmod +x actionlint
+                                                                                                        sudo mv actionlint /usr/local/bin/
+                                                                                                              - name: Run ActionLint
+                                                                                                                      run: actionlint
+
