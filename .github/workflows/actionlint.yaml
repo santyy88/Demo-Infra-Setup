@@ -1,24 +1,28 @@
 name: ActionLint
 
 on:
-    push:
-          paths:
-                  - '.github/workflows/**'
-                    pull_request:
-                          paths:
-                                  - '.github/workflows/**'
+  push:
+    paths:
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - '.github/workflows/**'
 
-                          jobs:
-                              lint:
-                                    runs-on: ubuntu-latest
-                                        steps:
-                                                - uses: actions/checkout@v3
-                                                      - name: Install ActionLint
-                                                              run: |
-                                                                          curl -sSL -o actionlint.tar.gz https://github.com/rhysd/actionlint/releases/download/v1.6.26/actionlint_1.6.26_linux_amd64.tar.gz
-                                                                                    tar -xzf actionlint.tar.gz
-                                                                                              chmod +x actionlint
-                                                                                                        sudo mv actionlint /usr/local/bin/
-                                                                                                              - name: Run ActionLint
-                                                                                                                      run: actionlint
+jobs:
+  lint:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v3
 
+      - name: Download ActionLint
+        run: |
+          Invoke-WebRequest -Uri https://github.com/rhysd/actionlint/releases/download/v1.6.26/actionlint_1.6.26_windows_amd64.zip -OutFile actionlint.zip
+          Expand-Archive actionlint.zip -DestinationPath actionlint
+
+      - name: Add ActionLint to PATH
+        run: |
+          $env:PATH += ";$PWD\actionlint"
+          echo "ActionLint path: $env:PATH"
+
+      - name: Run ActionLint
+        run: actionlint.exe
