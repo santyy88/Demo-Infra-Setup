@@ -85,6 +85,10 @@ jobs:
           name: terraform-plan
           path: terraform
 
+      - name: Verify Terraform Plan Exists (debug)
+        shell: powershell
+        run: dir terraform
+
       - name: Terraform Apply
         shell: powershell
         run: terraform -chdir=terraform apply -auto-approve terraform/tfplan
