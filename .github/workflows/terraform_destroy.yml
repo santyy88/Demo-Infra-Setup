@@ -1,11 +1,17 @@
-name: Terraform Destroy Production
+name: Terraform Destroy
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger only
 
 jobs:
   destroy:
     runs-on: [self-hosted, windows]
+
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - name: Checkout repository
@@ -14,7 +20,7 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.0
+          terraform_version: 1.7.0
 
       - name: Azure Login
         uses: azure/login@v1
@@ -22,7 +28,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Init
+        shell: pwsh
         run: terraform -chdir=terraform init
 
       - name: Terraform Destroy
+        shell: pwsh
         run: terraform -chdir=terraform destroy -auto-approve
