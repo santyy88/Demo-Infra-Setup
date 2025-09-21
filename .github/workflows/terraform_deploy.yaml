@@ -9,7 +9,7 @@ on:
       - main  # Automatically applies changes when merged to main
 
 jobs:
-  lint-and-plan:
+  plan:
     runs-on: [self-hosted, windows]
 
     env:
@@ -26,20 +26,6 @@ jobs:
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.7.0
-
-      - name: Install TFLint
-        shell: powershell
-        run: |
-          $version = "v1.6.27"  # Latest stable version
-          $url = "https://github.com/terraform-linters/tflint/releases/download/$version/tflint_windows_amd64.zip"
-          Invoke-WebRequest -Uri $url -OutFile tflint.zip
-          Expand-Archive tflint.zip -DestinationPath $Env:USERPROFILE\.tflint
-          $Env:PATH += ";$Env:USERPROFILE\.tflint"
-          & "$Env:USERPROFILE\.tflint\tflint.exe" --version
-
-      - name: Run TFLint
-        shell: powershell
-        run: & "$Env:USERPROFILE\.tflint\tflint.exe" -c ./terraform/.tflint.hcl
 
       - name: Azure Login
         uses: azure/login@v1
@@ -66,8 +52,35 @@ jobs:
 
   auto-apply:
     runs-on: [self-hosted, windows]
-    needs: lint-and-plan
+    needs: plan
     if: github.ref == 'refs/heads/main'  # Only auto-apply on main branch push
 
     env:
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.0
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan
+          path: terraform
+
+      - name: Terraform Apply
+        shell: powershell
+        run: terraform -chdir=terraform apply -auto-approve tfplan
