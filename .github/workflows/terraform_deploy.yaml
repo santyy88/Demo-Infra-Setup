@@ -1,11 +1,22 @@
-name: Terraform Deploy Prod
+name: Terraform CI/CD Auto-Apply
 
 on:
-  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main  # Automatically applies changes when merged to main
 
 jobs:
-  deploy:
+  lint-and-plan:
     runs-on: [self-hosted, windows]
+
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - name: Checkout repository
@@ -14,7 +25,19 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.0
+          terraform_version: 1.7.0
+
+      - name: Install TFLint
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri https://github.com/terraform-linters/tflint/releases/download/v1.6.26/tflint_windows_amd64.zip -OutFile tflint.zip
+          Expand-Archive tflint.zip -DestinationPath $Env:USERPROFILE\.tflint
+          $Env:PATH += ";$Env:USERPROFILE\.tflint"
+          tflint --version
+
+      - name: Run TFLint
+        shell: pwsh
+        run: tflint -c ./terraform/.tflint.hcl
 
       - name: Azure Login
         uses: azure/login@v1
@@ -22,8 +45,54 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Init
+        shell: pwsh
         run: terraform -chdir=terraform init
 
+      - name: Terraform Validate
+        shell: pwsh
+        run: terraform -chdir=terraform validate
+
       - name: Terraform Plan
+        shell: pwsh
         run: terraform -chdir=terraform plan -out=tfplan
 
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v3
+        with:
+          name: terraform-plan
+          path: terraform/tfplan
+
+  auto-apply:
+    runs-on: [self-hosted, windows]
+    needs: lint-and-plan
+    if: github.ref == 'refs/heads/main'  # Only auto-apply on main branch push
+
+    env:
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
+      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
+      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.7.0
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v3
+        with:
+          name: terraform-plan
+          path: terraform
+
+      - name: Terraform Apply
+        shell: pwsh
+        run: terraform -chdir=terraform apply -auto-approve tfplan
