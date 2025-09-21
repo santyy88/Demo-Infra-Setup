@@ -1,27 +1,20 @@
 name: Terraform Lint
 
 on:
-  pull_request:
-    branches: [main]
+  workflow_dispatch:   # manual trigger
 
 jobs:
   terraform-lint:
     runs-on: [self-hosted, windows]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
+      - uses: actions/checkout@v3
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
-
       - name: Terraform Init
         run: terraform -chdir=terraform init
-
       - name: Terraform Validate
         run: terraform -chdir=terraform validate
-
-      # Optional: tflint
       - name: Terraform Linter (tflint)
         run: tflint
