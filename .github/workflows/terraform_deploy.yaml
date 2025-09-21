@@ -28,7 +28,7 @@ jobs:
           terraform_version: 1.7.0
 
       - name: Install TFLint
-        shell: pwsh
+        shell: powershell
         run: |
           Invoke-WebRequest -Uri https://github.com/terraform-linters/tflint/releases/download/v1.6.26/tflint_windows_amd64.zip -OutFile tflint.zip
           Expand-Archive tflint.zip -DestinationPath $Env:USERPROFILE\.tflint
