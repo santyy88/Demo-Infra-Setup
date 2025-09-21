@@ -8,13 +8,13 @@ on:
 
 jobs:
   lint:
-    runs-on: self-hosted
+    runs-on: [self-hosted, windows]   # or windows-latest if you use hosted runner
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Download actionlint for Windows
-        shell: pwsh
+        shell: powershell
         run: |
           $url = "https://github.com/rhysd/actionlint/releases/download/v1.6.26/actionlint_1.6.26_windows_amd64.zip"
           Invoke-WebRequest -Uri $url -OutFile actionlint.zip
