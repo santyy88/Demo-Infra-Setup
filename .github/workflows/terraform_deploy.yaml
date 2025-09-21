@@ -6,17 +6,11 @@ on:
       - main
   push:
     branches:
-      - main  # Automatically applies changes when merged to main
+      - main
 
 jobs:
   plan-and-apply:
     runs-on: [self-hosted, windows]
-
-    env:
-      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      ARM_CLIENT_ID:       ${{ secrets.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET:   ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_TENANT_ID:       ${{ secrets.AZURE_TENANT_ID }}
 
     steps:
       - name: Checkout repository
@@ -33,21 +27,17 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Init
-        shell: powershell
         run: terraform -chdir=terraform init
+        shell: powershell
 
       - name: Terraform Validate
-        shell: powershell
         run: terraform -chdir=terraform validate
+        shell: powershell
 
       - name: Terraform Plan
-        shell: powershell
         run: terraform -chdir=terraform plan -out=tfplan
-
-      - name: List Terraform folder (debug)
         shell: powershell
-        run: dir terraform
 
       - name: Terraform Apply
-        shell: powershell
         run: terraform -chdir=terraform apply -auto-approve tfplan
+        shell: powershell
