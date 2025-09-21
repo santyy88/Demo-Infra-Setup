@@ -1,2 +1,2 @@
 # Demo-Infra-Setup
-Testing the infra
+Testing the infrastructure
