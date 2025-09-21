@@ -28,9 +28,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Init
-        shell: pwsh
+        shell: powershell
         run: terraform -chdir=terraform init
 
       - name: Terraform Destroy
-        shell: pwsh
+        shell: powershell
         run: terraform -chdir=terraform destroy -auto-approve
